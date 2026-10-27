@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23050505'/><rect x='3' y='3' width='10' height='10' stroke='%238be9fd' stroke-width='2' fill='none'/></svg>"
+    />
+    <title>TextureText v0.1</title>
+  </head>
+  <body>
+    <!-- ERROR TOAST CONTAINER (Spec D7 / TextureMosaic D9) -->
+    <div class="toast-container" data-testid="error-container">
+      <div class="toast is-danger" data-testid="error-banner" hidden>
+        <div style="flex: 1">
+          <div class="toast-title">Error</div>
+          <div class="toast-message" data-testid="error-message"></div>
+        </div>
+        <button type="button" class="toast-close" data-testid="error-dismiss-btn" title="Dismiss">✕</button>
+      </div>
+    </div>
+
+    <!-- HIDDEN FILE INPUTS -->
+    <input type="file" id="fileInput" hidden data-testid="file-input" />
+    <input type="file" accept=".json,application/json" hidden data-testid="preset-file-input" />
+
+    <div id="app">
+      <!-- LEFT PANEL: INPUTS (Figma 10:479) -->
+      <aside class="ts-panel-inputs" data-testid="panel-inputs">
+        <div class="ts-section-heading">
+          <span class="ts-section-title">Inputs</span>
+        </div>
+
+        <!-- 1. CONTROL INPUT -->
+        <section class="ts-source-block" data-testid="control-input-group">
+          <div class="ts-block-header">
+            <span class="ts-field-label">control input</span>
+            <button type="button" class="ts-reset-inline" data-testid="source-clear-btn" title="Clear source">clear</button>
+          </div>
+          <div class="ts-source-grid">
+            <div class="ts-source-buttons">
+              <button type="button" class="button" data-testid="source-webcam">webcam</button>
+              <button type="button" class="button" data-testid="source-video">video file</button>
+              <button type="button" class="button" data-testid="source-image">image file</button>
+            </div>
+            <div class="ts-source-preview" data-testid="source-preview" title="Click to load control image or video">
+              <canvas id="previewCanvas" width="118" height="118" hidden></canvas>
+              <div class="ts-empty-state" data-testid="source-empty">
+                <div class="ts-empty-glyph">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="16" />
+                    <circle cx="8.5" cy="9.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 20" />
+                  </svg>
+                </div>
+                <span class="ts-empty-label">add image</span>
+              </div>
+              <span class="ts-preview-badge" data-testid="source-badge" hidden></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. TEXT INPUT -->
+        <section class="ts-source-block" data-testid="text-input-group" style="flex: 1; min-height: 0">
+          <div class="ts-block-header">
+            <span class="ts-field-label">text input</span>
+            <span class="ts-field-count" data-testid="text-count-label">0 chars</span>
+          </div>
+          <div class="ts-header-actions" style="justify-content: space-between">
+            <button type="button" class="button ts-btn-small" data-testid="text-reset-btn">reset text</button>
+            <button type="button" class="button ts-btn-small" data-testid="text-clear-btn">clear</button>
+          </div>
+          <div class="ts-stack-container is-loaded" data-testid="text-container">
+            <textarea class="textarea ts-text-area" data-testid="input-text" spellcheck="false"></textarea>
+          </div>
+        </section>
+      </aside>
+
+      <!-- CENTER PANEL: STAGE + PLAYBACK (Figma 2:106, 5:175, 10:629) -->
+      <main class="ts-panel-stage" data-testid="panel-stage">
+        <header class="ts-section-heading">
+          <div style="display: flex; align-items: baseline; gap: 12px">
+            <span class="ts-section-title">TextureText v0.1</span>
+            <span class="ts-section-meta" data-testid="resolution-label">1280 X 720 PX</span>
+          </div>
+          <div class="ts-header-actions">
+            <button type="button" class="button ts-btn-small" data-testid="stats-toggle">stats</button>
+            <button type="button" class="button ts-btn-small" data-testid="reset-all-btn">reset all</button>
+            <button type="button" class="button is-primary ts-btn-small" data-testid="snapshot-btn">snapshot png</button>
+            <button type="button" class="button is-primary ts-btn-small" data-testid="prores-export-btn">export prores</button>
+          </div>
+        </header>
+
+        <div class="ts-canvas-stage" data-testid="canvas-stage">
+          <div class="ts-render-canvas" data-testid="stage">
+            <video id="stageVideo" class="ts-stage-media" muted loop playsinline hidden></video>
+            <img id="stageImage" class="ts-stage-media" alt="" hidden />
+            <div class="ts-text-stage" data-testid="text-layer"></div>
+            <canvas id="stageProcessedCanvas" class="ts-stage-processed" data-testid="stage-processed" hidden></canvas>
+            <div class="ts-stage-empty" data-testid="stage-empty" hidden>
+              <span class="ts-empty-label">enter text to render</span>
+            </div>
+          </div>
+          <div class="ts-stats-overlay" data-testid="stats-overlay" hidden></div>
+        </div>
+
+        <footer class="ts-playback" data-testid="playback-actions">
+          <div class="ts-transports">
+            <div class="ts-transport" data-testid="transport">
+              <div class="progress ts-progress-clickable is-static" data-testid="transport-track">
+                <div class="progress-bar" data-testid="transport-fill" style="width: 0%"></div>
+              </div>
+              <div class="ts-transport-row">
+                <div class="ts-transport-left">
+                  <button type="button" class="ts-media-btn" data-testid="transport-play" title="Play / Pause control video" disabled>▶</button>
+                  <span class="ts-field-label" data-testid="transport-status">None</span>
+                </div>
+                <div class="ts-time-display" data-testid="transport-time" hidden>
+                  <span class="ts-time-current" data-testid="transport-time-current">00:00</span>
+                  <span class="ts-time-total">/ <span data-testid="transport-time-duration">00:00</span></span>
+                </div>
+                <span class="ts-live-label" data-testid="transport-label" hidden>Live</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </main>
+
+      <!-- RIGHT PANEL: PARAMETERS (Figma 10:478) -->
+      <aside class="ts-panel-params" data-testid="panel-parameters">
+        <div class="ts-section-heading">
+          <span class="ts-section-title">Parameters</span>
+        </div>
+
+        <!-- 0. PRESETS (full-scene JSON save / export / import, TextureMosaic U11) -->
+        <section class="ts-param-group" data-testid="group-presets">
+          <div class="ts-block-header">
+            <span class="ts-field-label">presets</span>
+            <div class="ts-header-actions">
+              <button type="button" class="ts-reset-inline" data-testid="preset-import-btn" title="Import a preset .json file from disk">import</button>
+              <button type="button" class="ts-reset-inline" data-testid="preset-export-btn" title="Export the current scene as a .json preset file">export</button>
+            </div>
+          </div>
+
+          <div class="ts-control-split">
+            <span class="ts-control-prefix">preset</span>
+            <select class="ts-control-input ts-preset-select" data-testid="preset-select"></select>
+          </div>
+
+          <div class="ts-control-split">
+            <span class="ts-control-prefix">name</span>
+            <input type="text" class="ts-control-input" data-testid="preset-name-input" value="preset_01" spellcheck="false" />
+          </div>
+          <div class="ts-toggle-row">
+            <button type="button" class="button" data-testid="preset-save-btn" title="Save the full scene (parameters + embedded media) as a preset">save preset</button>
+          </div>
+        </section>
+
+        <!-- 1. WORKING RESOLUTION / CANVAS SIZE (Figma 4:118) -->
+        <section class="ts-param-group" data-testid="group-resolution">
+          <div class="ts-block-header">
+            <span class="ts-field-label">canvas size</span>
+            <button type="button" class="ts-reset-inline" data-testid="reset-resolution-btn" title="Reset resolution to 1280×720">rst</button>
+          </div>
+          <div class="ts-dual-controls">
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">x</span>
+              <input type="number" min="1" max="4096" step="1" class="ts-control-input" data-testid="resolution-width-input" value="1280" />
+            </div>
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">y</span>
+              <input type="number" min="1" max="4096" step="1" class="ts-control-input" data-testid="resolution-height-input" value="720" />
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. CONTROL (LUMA) PARAMETERS -->
+        <section class="ts-param-group" data-testid="group-source">
+          <div class="ts-block-header">
+            <span class="ts-field-label">control</span>
+            <button type="button" class="ts-reset-inline" data-testid="reset-group-source-btn" title="Reset control parameters">rst all</button>
+          </div>
+
+          <!-- contrast -->
+          <div class="ts-control-box">
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">contrast</span>
+              <input type="number" min="0" max="4" step="0.01" class="ts-control-input" data-testid="contrast-number" value="1" />
+            </div>
+            <div class="ts-slider-row">
+              <input type="range" min="0" max="4" step="0.01" class="ts-slider" data-testid="contrast-slider" value="1" />
+              <button type="button" class="ts-reset-inline" data-testid="contrast-reset" title="Reset contrast">↺</button>
+            </div>
+          </div>
+
+          <!-- offset -->
+          <div class="ts-control-box">
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">offset</span>
+              <input type="number" min="-1" max="1" step="0.01" class="ts-control-input" data-testid="offset-number" value="0" />
+            </div>
+            <div class="ts-slider-row">
+              <input type="range" min="-1" max="1" step="0.01" class="ts-slider" data-testid="offset-slider" value="0" />
+              <button type="button" class="ts-reset-inline" data-testid="offset-reset" title="Reset offset">↺</button>
+            </div>
+          </div>
+
+          <!-- invert color toggle -->
+          <div class="ts-toggle-row">
+            <button type="button" class="button" data-testid="invert-toggle">invert color</button>
+            <button type="button" class="ts-reset-inline" data-testid="invert-reset" title="Reset invert color">↺</button>
+          </div>
+        </section>
+
+        <!-- 3. SHAPE PARAMETERS -->
+        <section class="ts-param-group" data-testid="group-shape">
+          <div class="ts-block-header">
+            <span class="ts-field-label">shape</span>
+            <button type="button" class="ts-reset-inline" data-testid="reset-group-shape-btn" title="Reset shape parameters">rst all</button>
+          </div>
+
+          <!-- flow mode: 0 = outside, 1 = inside -->
+          <div class="ts-mode-row" data-testid="flowMode-group">
+            <button type="button" class="button is-primary" data-testid="flowMode-0" title="0: Outside (wrap around bright areas)">outside</button>
+            <button type="button" class="button" data-testid="flowMode-1" title="1: Inside (fill bright shape)">inside</button>
+            <button type="button" class="ts-reset-inline" data-testid="flowMode-reset" title="Reset flow mode">↺</button>
+          </div>
+
+          <!-- threshold & softness -->
+          <div class="ts-dual-controls">
+            <div class="ts-control-box">
+              <div class="ts-control-split">
+                <span class="ts-control-prefix">thresh</span>
+                <input type="number" min="0" max="1" step="0.01" class="ts-control-input" data-testid="threshold-number" value="0.5" />
+              </div>
+              <div class="ts-slider-row">
+                <input type="range" min="0" max="1" step="0.01" class="ts-slider" data-testid="threshold-slider" value="0.5" />
+                <button type="button" class="ts-reset-inline" data-testid="threshold-reset" title="Reset threshold">↺</button>
+              </div>
+            </div>
+
+            <div class="ts-control-box">
+              <div class="ts-control-split">
+                <span class="ts-control-prefix">soft</span>
+                <input type="number" min="0" max="0.5" step="0.01" class="ts-control-input" data-testid="thresholdSoft-number" value="0.05" />
+              </div>
+              <div class="ts-slider-row">
+                <input type="range" min="0" max="0.5" step="0.01" class="ts-slider" data-testid="thresholdSoft-slider" value="0.05" />
+                <button type="button" class="ts-reset-inline" data-testid="thresholdSoft-reset" title="Reset softness">↺</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- padding & smoothing -->
+          <div class="ts-dual-controls">
+            <div class="ts-control-box">
+              <div class="ts-control-split">
+                <span class="ts-control-prefix">pad</span>
+                <input type="number" min="0" max="40" step="1" class="ts-control-input" data-testid="shapePadding-number" value="8" />
+              </div>
+              <div class="ts-slider-row">
+                <input type="range" min="0" max="40" step="1" class="ts-slider" data-testid="shapePadding-slider" value="8" />
+                <button type="button" class="ts-reset-inline" data-testid="shapePadding-reset" title="Reset padding">↺</button>
+              </div>
+            </div>
+
+            <div class="ts-control-box">
+              <div class="ts-control-split">
+                <span class="ts-control-prefix">smooth</span>
+                <input type="number" min="0" max="0.95" step="0.05" class="ts-control-input" data-testid="temporalSmooth-number" value="0.3" />
+              </div>
+              <div class="ts-slider-row">
+                <input type="range" min="0" max="0.95" step="0.05" class="ts-slider" data-testid="temporalSmooth-slider" value="0.3" />
+                <button type="button" class="ts-reset-inline" data-testid="temporalSmooth-reset" title="Reset smoothing">↺</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- grid resolution -->
+          <div class="ts-control-box">
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">grid px</span>
+              <input type="number" min="2" max="16" step="1" class="ts-control-input" data-testid="gridCellPx-number" value="4" />
+            </div>
+            <div class="ts-slider-row">
+              <input type="range" min="2" max="16" step="1" class="ts-slider" data-testid="gridCellPx-slider" value="4" />
+              <button type="button" class="ts-reset-inline" data-testid="gridCellPx-reset" title="Reset grid px">↺</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. TEXT PARAMETERS -->
+        <section class="ts-param-group" data-testid="group-text">
+          <div class="ts-block-header">
+            <span class="ts-field-label">text</span>
+            <button type="button" class="ts-reset-inline" data-testid="reset-group-text-btn" title="Reset text parameters">rst all</button>
+          </div>
+
+          <!-- font family -->
+          <div class="ts-control-split">
+            <span class="ts-control-prefix">font</span>
+            <select class="ts-control-input ts-preset-select" data-testid="fontFamily-select">
+              <option value="serif">editorial serif</option>
+              <option value="mono">jetbrains mono</option>
+              <option value="sans">helvetica sans</option>
+            </select>
+          </div>
+
+          <!-- font size & line height -->
+          <div class="ts-dual-controls">
+            <div class="ts-control-box">
+              <div class="ts-control-split">
+                <span class="ts-control-prefix">size</span>
+                <input type="number" min="8" max="64" step="1" class="ts-control-input" data-testid="fontSize-number" value="18" />
+              </div>
+              <div class="ts-slider-row">
+                <input type="range" min="8" max="64" step="1" class="ts-slider" data-testid="fontSize-slider" value="18" />
+                <button type="button" class="ts-reset-inline" data-testid="fontSize-reset" title="Reset font size">↺</button>
+              </div>
+            </div>
+
+            <div class="ts-control-box">
+              <div class="ts-control-split">
+                <span class="ts-control-prefix">line h</span>
+                <input type="number" min="8" max="96" step="1" class="ts-control-input" data-testid="lineHeight-number" value="26" />
+              </div>
+              <div class="ts-slider-row">
+                <input type="range" min="8" max="96" step="1" class="ts-slider" data-testid="lineHeight-slider" value="26" />
+                <button type="button" class="ts-reset-inline" data-testid="lineHeight-reset" title="Reset line height">↺</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- text color & background color -->
+          <div class="ts-dual-controls">
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">fg</span>
+              <input type="color" class="ts-color-input" data-testid="textColor-input" value="#e8e4dc" />
+            </div>
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">bg</span>
+              <input type="color" class="ts-color-input" data-testid="bgColor-input" value="#050505" />
+            </div>
+          </div>
+
+          <!-- blend mode -->
+          <div class="ts-control-split">
+            <span class="ts-control-prefix">blend</span>
+            <select class="ts-control-input ts-preset-select" data-testid="blendMode-select">
+              <option value="none">none</option>
+              <option value="multiply">multiply</option>
+              <option value="screen">screen</option>
+              <option value="overlay">overlay</option>
+              <option value="darken">darken</option>
+              <option value="lighten">lighten</option>
+              <option value="color-dodge">color-dodge</option>
+              <option value="color-burn">color-burn</option>
+              <option value="hard-light">hard-light</option>
+              <option value="soft-light">soft-light</option>
+              <option value="difference">difference</option>
+              <option value="exclusion">exclusion</option>
+            </select>
+          </div>
+
+          <!-- repeat text toggle -->
+          <div class="ts-toggle-row">
+            <button type="button" class="button is-primary" data-testid="repeatText-toggle">repeat text</button>
+            <button type="button" class="ts-reset-inline" data-testid="repeatText-reset" title="Reset repeat text">↺</button>
+          </div>
+        </section>
+
+        <!-- 5. EXPORT PARAMETERS -->
+        <section class="ts-param-group" data-testid="group-export">
+          <div class="ts-block-header">
+            <span class="ts-field-label">export</span>
+          </div>
+
+          <div class="ts-control-split">
+            <span class="ts-control-prefix">profile</span>
+            <select class="ts-control-input ts-preset-select" data-testid="prores-profile-select">
+              <option value="0">prores 422 proxy</option>
+              <option value="1">prores 422 lt</option>
+              <option value="2">prores 422</option>
+              <option value="3" selected>prores 422 hq</option>
+              <option value="4">prores 4444</option>
+              <option value="5">prores 4444 xq</option>
+            </select>
+          </div>
+
+          <div class="ts-dual-controls">
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">sec</span>
+              <input type="number" min="1" max="60" step="1" class="ts-control-input" data-testid="export-duration-input" value="5" />
+            </div>
+            <div class="ts-control-split">
+              <span class="ts-control-prefix">fps</span>
+              <input type="number" min="1" max="60" step="1" class="ts-control-input" data-testid="export-fps-input" value="30" />
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

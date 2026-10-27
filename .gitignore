@@ -1,0 +1,12 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+
+# Local render output (exported PNG / ProRes files)
+render/
+
+# Editor / OS metadata
+.obsidian/
+.DS_Store
+Thumbs.db

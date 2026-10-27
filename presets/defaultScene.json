@@ -1,0 +1,29 @@
+{
+  "app": "TextureText",
+  "version": 1,
+  "name": "default scene",
+  "workingWidth": 1280,
+  "workingHeight": 720,
+  "text": "TextureText flows a fixed input text around the luminance of a live source. Load an image, a video, or a webcam feed, then shape the words with light. Every horizontal band samples the processed luminance grid, carves out blocked intervals with configurable threshold, softness, and padding, and lays out each surviving slot using pure arithmetic over cached glyph widths. Switch between outside and inside flow modes to wrap around bright subjects or fill their silhouettes directly.",
+  "sourceParams": { "invert": false, "contrast": 1, "offset": 0 },
+  "shapeParams": {
+    "flowMode": 0,
+    "threshold": 0.5,
+    "thresholdSoft": 0.05,
+    "shapePadding": 8,
+    "temporalSmooth": 0.3,
+    "gridCellPx": 4,
+    "minSlotWidth": 40
+  },
+  "textParams": {
+    "fontFamily": "\"Iowan Old Style\", \"Palatino Linotype\", \"Book Antiqua\", Palatino, Georgia, serif",
+    "fontSize": 18,
+    "lineHeight": 26,
+    "textColor": "#e8e4dc",
+    "bgColor": "#050505",
+    "blendMode": "none",
+    "repeatText": true
+  },
+  "exportSettings": { "duration": 5, "fps": 30, "profile": 3 },
+  "source": { "mode": "none", "name": "", "dataUrl": null, "time": 0, "playing": false }
+}
