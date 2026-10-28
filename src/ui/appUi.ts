@@ -26,7 +26,10 @@ import {
   collectSourceSlot,
   downloadPresetJson,
   fetchPresetJson,
+  findRepoPreset,
   listRepoPresets,
+  resolveBootPresetId,
+  type RepoPresetEntry,
   type TextureTextPresetV1,
 } from '../engine/presets'
 import type { SourceManager } from '../engine/sourceManager'
@@ -73,6 +76,7 @@ export function createAppUi(
     resetHistory: () => void
   },
   onError: (message: string) => void,
+  refreshPreview: () => void = () => {},
 ) {
   const fileInput = el<HTMLInputElement>('file-input')
   const webcamBtn = el<HTMLButtonElement>('source-webcam')
@@ -119,6 +123,13 @@ export function createAppUi(
   function runReflow(): void {
     const src = sources.getFrameSource()
     const size = sources.getSourceSize()
+    const transport = sources.getTransport()
+    // Temporal smoothing damps flicker in live frames only; static images and
+    // paused video must respond to parameter changes immediately.
+    const smooth =
+      transport.playing && (transport.kind === 'video' || transport.kind === 'webcam')
+        ? state.shapeParams.temporalSmooth
+        : 0
     let lumaBuf: LumaFieldBuffer | null = null
     if (src && size) {
       lumaBuf = lumaExtractor.extract(
@@ -130,7 +141,7 @@ export function createAppUi(
         state.shapeParams.gridCellPx,
         state.textParams.lineHeight,
         state.sourceParams,
-        state.shapeParams.temporalSmooth,
+        smooth,
       )
     }
     const res = layoutTextAroundLuma(
@@ -151,6 +162,7 @@ export function createAppUi(
       src ? lumaExtractor.canvas : null,
     )
     stageEmpty.hidden = res.lines.length > 0
+    refreshPreview()
   }
 
   imageBtn.addEventListener('click', () => {
@@ -331,6 +343,7 @@ export function createAppUi(
   const presetFileInput = el<HTMLInputElement>('preset-file-input')
   const repoPresets = listRepoPresets()
   const sessionPresets = new Map<string, TextureTextPresetV1>()
+  const repoPresetCache = new Map<string, unknown>()
   let sessionPresetCounter = 1
 
   async function serializeScene(name: string): Promise<TextureTextPresetV1> {
@@ -370,6 +383,17 @@ export function createAppUi(
   }
   populatePresetSelect()
 
+  async function applyRepoPreset(entry: RepoPresetEntry): Promise<void> {
+    let json = repoPresetCache.get(entry.id)
+    if (json === undefined) {
+      json = await fetchPresetJson(entry.url)
+      repoPresetCache.set(entry.id, json)
+    }
+    const preset = await applyPreset(json, sources)
+    presetNameInput.value = preset.name
+    populatePresetSelect(`repo:${entry.id}`)
+  }
+
   presetSelect.addEventListener('change', async () => {
     const value = presetSelect.value
     if (!value) return
@@ -377,9 +401,7 @@ export function createAppUi(
       if (value.startsWith('repo:')) {
         const entry = repoPresets.find((e) => e.id === value.slice(5))
         if (!entry) return
-        const json = await fetchPresetJson(entry.url)
-        const preset = await applyPreset(json, sources)
-        presetNameInput.value = preset.name
+        await applyRepoPreset(entry)
       } else if (value.startsWith('session:')) {
         const preset = sessionPresets.get(value.slice(8))
         if (!preset) return
@@ -390,6 +412,22 @@ export function createAppUi(
       onError(err instanceof Error ? err.message : 'Failed to load preset.')
     }
   })
+
+  /** Boot default: apply the repo preset configured for first load (`?preset=` override). */
+  function bootDefaultPreset(): void {
+    const bootPresetId = resolveBootPresetId(window.location.search)
+    if (!bootPresetId) return
+    const entry = findRepoPreset(bootPresetId)
+    if (!entry) {
+      onError(`Default preset "${bootPresetId}" was not found.`)
+      return
+    }
+    presetSelect.value = `repo:${entry.id}`
+    void applyRepoPreset(entry).catch((err) => {
+      populatePresetSelect()
+      onError(err instanceof Error ? err.message : 'Failed to load the default preset.')
+    })
+  }
 
   el<HTMLButtonElement>('preset-save-btn').addEventListener('click', async () => {
     try {
@@ -669,6 +707,8 @@ export function createAppUi(
     requestAnimationFrame(tick)
   }
   requestAnimationFrame(tick)
+
+  bootDefaultPreset()
 
   return { onError, runReflow }
 }

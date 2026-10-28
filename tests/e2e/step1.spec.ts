@@ -25,7 +25,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
     page.on('console', (m) => {
       if (m.type() === 'error') errors.push(m.text())
     })
-    await page.goto('/')
+    await page.goto('/?preset=none')
     await expect(page.getByTestId('panel-inputs')).toBeVisible()
     await expect(page.getByTestId('panel-stage')).toBeVisible()
     await expect(page.getByTestId('panel-parameters')).toBeVisible()
@@ -40,7 +40,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
   })
 
   test('image file loads into preview only, carves text slots on stage, and toggles outside/inside flowMode', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('source-image').click(),
@@ -63,7 +63,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
   })
 
   test('invert color button toggle flips the processed preview and reset restores it', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('source-image').click(),
@@ -84,7 +84,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
   })
 
   test('contrast slider drives the preview and split number input stays in sync', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('source-image').click(),
@@ -102,7 +102,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
   })
 
   test('video file loads off-stage, autoplays, and transport ▶/❚❚ button toggles playback', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('source-video').click(),
@@ -124,7 +124,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
   })
 
   test('webcam shows red Live track, updates preview, and keeps video element off-stage', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     await page.getByTestId('source-webcam').click()
     await expect(page.locator('#stageVideo')).toBeHidden()
     await expect(page.getByTestId('transport-label')).toHaveText('Live')
@@ -135,7 +135,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
   })
 
   test('unsupported file shows a visible danger toast and dismisses cleanly', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('source-image').click(),
@@ -148,7 +148,7 @@ test.describe('TextureMosaic studio UI + pretext luma text flow', () => {
   })
 
   test('stats overlay toggles and shows FPS, LINES, REFLOW, and RES', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     await expect(page.getByTestId('stats-overlay')).toBeHidden()
     await page.getByTestId('stats-toggle').click()
     await expect(page.getByTestId('stats-overlay')).toBeVisible()

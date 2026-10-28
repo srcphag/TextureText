@@ -17,6 +17,8 @@ resolution — so the preview, the stage, and the exports all agree.
   text and background colors, 16 canvas blend modes.
 - **Presets**: full-scene JSON save / export / import with Base64-embedded media.
   Every `.json` file in `presets/` is auto-discovered in the preset dropdown.
+  The app boots into `pyramid1`; `?preset=<id>` deep-links another repo preset and
+  `?preset=none` starts from the built-in default scene.
 - **Export**: PNG snapshot and ProRes `.mov` (via `prores-wasm-encoder`), both
   rendering the exact stage composition at working resolution.
 

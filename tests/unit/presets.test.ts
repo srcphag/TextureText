@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPresetFromState,
   dataUrlToBlob,
+  DEFAULT_PRESET_ID,
+  findRepoPreset,
+  listRepoPresets,
+  resolveBootPresetId,
   validatePreset,
 } from '../../src/engine/presets'
 import { DEFAULT_TEXT, state } from '../../src/engine/state'
@@ -62,5 +66,23 @@ describe('presets', () => {
 
   it('default text is non-empty so the default scene renders lines', () => {
     expect(DEFAULT_TEXT.length).toBeGreaterThan(100)
+  })
+
+  it('resolves the boot preset from the URL search string', () => {
+    expect(resolveBootPresetId('')).toBe(DEFAULT_PRESET_ID)
+    expect(resolveBootPresetId('?foo=1')).toBe(DEFAULT_PRESET_ID)
+    expect(resolveBootPresetId('?preset=none')).toBeNull()
+    expect(resolveBootPresetId('?preset=NONE')).toBeNull()
+    expect(resolveBootPresetId('?preset=')).toBeNull()
+    expect(resolveBootPresetId('?preset=defaultScene')).toBe('defaultScene')
+  })
+
+  it('indexes the shipped repo presets and finds the default one', () => {
+    const ids = listRepoPresets().map((entry) => entry.id)
+    expect(ids).toContain(DEFAULT_PRESET_ID)
+    expect(ids).toContain('defaultScene')
+    const entry = findRepoPreset(DEFAULT_PRESET_ID)
+    expect(entry?.url).toBeTruthy()
+    expect(findRepoPreset('missing-preset')).toBeNull()
   })
 })

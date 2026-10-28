@@ -3,8 +3,9 @@ dist/
 test-results/
 playwright-report/
 
-# Local render output (exported PNG / ProRes files)
-render/
+# Local render output (exported PNG / ProRes files) — repo root only,
+# so `src/render/` stays tracked.
+/render/
 
 # Editor / OS metadata
 .obsidian/

@@ -50,6 +50,27 @@ export async function fetchPresetJson(url: string): Promise<unknown> {
   return resp.json()
 }
 
+/** Repo preset applied on boot when the URL gives no `?preset=` override. */
+export const DEFAULT_PRESET_ID = 'pyramid1'
+
+export function findRepoPreset(id: string): RepoPresetEntry | null {
+  return listRepoPresets().find((entry) => entry.id === id) ?? null
+}
+
+/**
+ * Resolve the repo preset to apply at boot.
+ * - no `?preset=` param  → `DEFAULT_PRESET_ID`
+ * - `?preset=none`       → `null` (keep the built-in default scene)
+ * - `?preset=<id>`       → that repo preset
+ */
+export function resolveBootPresetId(search: string): string | null {
+  const param = new URLSearchParams(search).get('preset')
+  if (param === null) return DEFAULT_PRESET_ID
+  const id = param.trim()
+  if (id === '' || id.toLowerCase() === 'none') return null
+  return id
+}
+
 /* ---------------------------------------------------------------------------
  * Types & validation
  * ------------------------------------------------------------------------- */

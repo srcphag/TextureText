@@ -50,6 +50,7 @@ Pipeline: **one media source** (switch video/image/webcam) → **luma processing
 | D13 | With no media loaded, the stage shows a neutral empty state and the text flows in a plain full-width column. |
 | D14 | The composed source image is always the **post-processed** luma image (invert/contrast/offset, grid-quantized): the Inputs preview and the stage overlay draw the same canvas that shapes the text. With `blendMode === 'none'` the overlay is hidden (only `bgColor` + text); any active blend mode composites it over the text. Raw media elements stay hidden (decoders only). |
 | D15 | **Full-scene JSON presets** (`TextureTextPresetV1`): save / export / import complete scenes — name, canvas size, input text, all parameter groups, export settings, and the source slot with Base64-embedded media (webcam → PNG frame fallback). Repo presets are auto-discovered from `presets/*.json` (Vite `import.meta.glob`, lazy fetch); session presets live in the dropdown alongside them. |
+| D16 | The app boots with a repo preset applied (`DEFAULT_PRESET_ID`, currently `pyramid1`) rather than the bare built-in scene. `?preset=<id>` deep-links any repo preset and `?preset=none` starts from the built-in default scene (used by the e2e suite). A failed fetch/decode shows the error toast and leaves the built-in scene. |
 
 ### Parameters
 

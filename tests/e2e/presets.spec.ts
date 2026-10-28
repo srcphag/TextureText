@@ -35,8 +35,43 @@ const craftedPreset = {
 }
 
 test.describe('presets: full-scene JSON save / export / import', () => {
-  test('repo preset appears in the dropdown and applies on select', async ({ page }) => {
+  test('boots with the pyramid1 repo preset as the default scene', async ({ page }) => {
     await page.goto('/')
+
+    // The default preset fetch + media decode is async; wait for it to land.
+    await expect(page.getByTestId('preset-name-input')).toHaveValue('pyramid1', { timeout: 25_000 })
+    await expect(page.getByTestId('preset-select')).toHaveValue('repo:pyramid1')
+    await expect(page.getByTestId('resolution-label')).toHaveText('1280 X 1280 PX')
+    await expect(page.getByTestId('blendMode-select')).toHaveValue('color-dodge')
+    await expect(page.getByTestId('invert-toggle')).toHaveClass(/is-primary/)
+    await expect(page.getByTestId('contrast-number')).toHaveValue('3.88')
+    await expect(page.getByTestId('transport-status')).toHaveText('Video Input')
+    await expect(page.getByTestId('source-preview')).toHaveClass(/is-loaded/)
+
+    // Text flows around the embedded video's luminance.
+    await expect
+      .poll(async () => page.locator('[data-testid="flow-line"]:visible').count(), { timeout: 25_000 })
+      .toBeGreaterThan(50)
+  })
+
+  test('?preset=none keeps the built-in default scene', async ({ page }) => {
+    await page.goto('/?preset=none')
+    await expect(page.getByTestId('preset-select')).toHaveValue('')
+    await expect(page.getByTestId('resolution-label')).toHaveText('1280 X 720 PX')
+    await expect(page.getByTestId('blendMode-select')).toHaveValue('none')
+    await expect(page.getByTestId('transport-status')).toHaveText('None')
+    await expect(page.getByTestId('source-empty')).toBeVisible()
+  })
+
+  test('?preset=<id> deep-links a different repo preset', async ({ page }) => {
+    await page.goto('/?preset=defaultScene')
+    await expect(page.getByTestId('preset-name-input')).toHaveValue('default scene', { timeout: 25_000 })
+    await expect(page.getByTestId('preset-select')).toHaveValue('repo:defaultScene')
+    await expect(page.getByTestId('resolution-label')).toHaveText('1280 X 720 PX')
+  })
+
+  test('repo preset appears in the dropdown and applies on select', async ({ page }) => {
+    await page.goto('/?preset=none')
     const select = page.getByTestId('preset-select')
     await expect(select.locator('option', { hasText: 'defaultScene' })).toHaveCount(1)
 
@@ -50,7 +85,7 @@ test.describe('presets: full-scene JSON save / export / import', () => {
   })
 
   test('save creates a session preset and re-selecting it restores the scene', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     await page.getByTestId('invert-toggle').click()
     await page.getByTestId('blendMode-select').selectOption('multiply')
     await page.getByTestId('preset-name-input').fill('my scene')
@@ -69,7 +104,7 @@ test.describe('presets: full-scene JSON save / export / import', () => {
   })
 
   test('export downloads a valid TextureText preset .json', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.getByTestId('preset-export-btn').click(),
@@ -83,7 +118,7 @@ test.describe('presets: full-scene JSON save / export / import', () => {
   })
 
   test('import applies params, text, and embedded image media', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
 
     // Export a scene with an image loaded so the preset embeds it.
     const [chooser] = await Promise.all([
@@ -112,7 +147,7 @@ test.describe('presets: full-scene JSON save / export / import', () => {
   })
 
   test('import applies a crafted preset file to every control', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('preset-import-btn').click(),
@@ -133,7 +168,7 @@ test.describe('presets: full-scene JSON save / export / import', () => {
   })
 
   test('invalid JSON import shows a visible error toast', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('preset-import-btn').click(),

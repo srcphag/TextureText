@@ -70,3 +70,16 @@ Ported the TextureMosaic full-scene JSON preset system (plan: `specification/pre
 **E2E (Playwright, 6 tests):** repo preset listed and applies (restores defaults after drift); session preset save + re-select restores scene (invert, blend mode); export downloads a valid `.json`; import of an exported preset restores the embedded image source; crafted preset file applies to every control (text, invert, threshold, blend, flow mode, export settings); invalid JSON shows a dismissible error toast.
 
 Full suite green: 28/28 unit, 17/17 e2e; `npm run build` clean.
+
+## Default boot preset + preview fixes (2026-10-28, U16/U17)
+
+`pyramid1` is now the scene the app opens with (1280×1280, embedded mp4, `color-dodge` blend), with `?preset=<id>` deep links and `?preset=none` for the built-in default scene.
+
+Two regressions surfaced while re-baselining the suite and were fixed:
+
+1. **Preview one frame behind** — `preview` subscribed to `emit()` ahead of `syncControls`, so it drew the luma canvas from the previous emit. `runReflow` now calls `refreshPreview()` after extraction, so the thumbnail always matches the stage.
+2. **Static frames smoothed** — `temporalSmooth` was applied to images and paused video, leaving invert/contrast changes permanently 30 % short of the target. Smoothing now applies only while a video/webcam is playing.
+
+**Test change log (§8.4):** every existing e2e spec now navigates to `/?preset=none` so the previous baseline (no media, built-in defaults) is explicit instead of implicit; three new preset tests cover the boot default, the `none` opt-out, and `?preset=<id>` deep links. Two unit tests cover `resolveBootPresetId` and repo index lookup.
+
+Full suite green: 30/30 unit, 20/20 e2e; `npm run build` clean.

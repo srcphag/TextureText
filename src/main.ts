@@ -44,7 +44,7 @@ const preview = createPreview(
   () => (sources.getFrameSource() ? lumaExtractor.canvas : null),
 )
 preview.start()
-const ui = createAppUi(sources, lumaExtractor, showError)
+const ui = createAppUi(sources, lumaExtractor, showError, () => preview.update())
 uiReflow = ui.runReflow
 
 if (document.fonts?.ready) {

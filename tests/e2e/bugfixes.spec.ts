@@ -5,7 +5,7 @@ const fixtures = path.join(import.meta.dirname, '..', 'fixtures')
 
 test.describe('bugfixes: resolution, style consistency, source composition', () => {
   test('resolution inputs reshape the stage box and reflow text', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     await expect.poll(async () => (await page.getByTestId('flow-line').count())).toBeGreaterThan(5)
 
     await page.getByTestId('resolution-width-input').fill('640')
@@ -19,7 +19,7 @@ test.describe('bugfixes: resolution, style consistency, source composition', () 
   })
 
   test('all visible lines always share the current style after shrink-then-regrow', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     await expect.poll(async () => (await page.getByTestId('flow-line').count())).toBeGreaterThan(5)
 
     // Few lines: repeat off + short text.
@@ -48,7 +48,7 @@ test.describe('bugfixes: resolution, style consistency, source composition', () 
   })
 
   test('post-processed source composes over the text only when a blend mode is active', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/?preset=none')
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByTestId('source-image').click(),
